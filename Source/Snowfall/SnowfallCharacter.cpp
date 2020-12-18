@@ -10,6 +10,7 @@ ASnowfallCharacter::ASnowfallCharacter()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
+	sprinting = false;
 }
 
 // Called when the game starts or when spawned
@@ -37,6 +38,7 @@ void ASnowfallCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+	//PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ACharacter::Crouch);
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ASnowfallCharacter::Shoot);
 	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ASnowfallCharacter::Reload);
 }
@@ -45,7 +47,8 @@ void ASnowfallCharacter::MoveForward(float value)
 {
 	if (!FMath::IsNearlyZero(value))
 	{
-		AddMovementInput(GetActorForwardVector(), value);
+		float modifier = sprinting ? SPRINT_MODIFIER : 1.0f;
+		AddMovementInput(GetActorForwardVector(), value * modifier);
 	}
 }
 
@@ -82,6 +85,16 @@ void ASnowfallCharacter::Reload()
 	}
 
 	activeWeapon->LoadMagazine();
+}
+
+void ASnowfallCharacter::Crouch()
+{
+	
+}
+
+void ASnowfallCharacter::Sprint()
+{
+	sprinting = true;
 }
 
 void ASnowfallCharacter::UpdateHeadRot()

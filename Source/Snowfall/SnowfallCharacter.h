@@ -22,6 +22,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FRotator headRot;
+
+private:
+	const float SPRINT_MODIFIER = 1.5f;
+	bool sprinting;
 	
 public:
 	// Sets default values for this character's properties
@@ -47,4 +51,6 @@ private:
 	void MoveRight(float value);
 	void Shoot();
 	void Reload();
+	void Crouch();
+	void Sprint();
 };
