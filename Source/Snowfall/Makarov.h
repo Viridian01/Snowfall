@@ -10,7 +10,7 @@
  * 
  */
 UCLASS()
-class SNOWFALL_API UMakarov : public UWeaponBase
+class SNOWFALL_API AMakarov : public AWeaponBase
 {
 	GENERATED_BODY()
 	

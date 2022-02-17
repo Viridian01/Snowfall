@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SnowfallItem.h"
 #include "Sound/SoundBase.h"
 #include "UObject/NoExportTypes.h"
 #include "WeaponBase.generated.h"
@@ -10,39 +11,57 @@
 /**
  * 
  */
-UCLASS(Abstract, BlueprintType, Blueprintable, EditInlineNew, DefaultToInstanced)
-class SNOWFALL_API UWeaponBase : public UObject
+UCLASS(Abstract, BlueprintType, Blueprintable, DefaultToInstanced)
+class SNOWFALL_API AWeaponBase : public ASnowfallItem
 {
 	GENERATED_BODY()
 
-public:
+private:
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	FText name;
-	
+	bool bIsRoundInChamber;
+	float NextPossibleAttackTime;
+	bool bIsOwned;
+
 protected:
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	USoundBase* fireSound;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	UStaticMesh* model;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	int magazineCapacity;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	int currentMagazine;
+	USoundBase* FireSound;
 
-	bool roundInChamber;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UStaticMesh* V_Model;
+
+	UStaticMeshComponent* V_ModelStaticMeshComponent;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	int MagazineCapacity;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	int CurrentMagazine;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	float FireRate;
 
 public:
 
-	UWeaponBase();
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	FText AmmoDisplay;
+
+private:
+
+	void UpdateAmmoDisplay();
+	void OnPickup(AActor* InteractingActor);
+
+public:
+
+	AWeaponBase();
 	USoundBase* GetFireSound();
 	int GetCurrentMagazine();
-	void FireRound();
+	bool Fire();
+	void DryFire();
 	void LoadMagazine();
-	bool isRoundInChamber();
-	
+	bool IsRoundInChamber();
+	float GetNextAttackTime();
+	void UpdateAttackTime(float Time);
+
+	virtual void Interact(AActor* InteractingActor) override;
 };

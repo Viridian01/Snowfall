@@ -3,52 +3,105 @@
 
 #include "WeaponBase.h"
 
-UWeaponBase::UWeaponBase()
+void AWeaponBase::UpdateAmmoDisplay()
 {
-	roundInChamber = false;
+	AmmoDisplay = FText::FromString(FString::FromInt(GetCurrentMagazine()).Append(IsRoundInChamber() ? "+1" : ""));
+	UE_LOG(LogTemp, Display, TEXT("Updated ammo display."));
 }
 
-USoundBase* UWeaponBase::GetFireSound()
+void AWeaponBase::DryFire()
 {
-	return fireSound;
+
 }
 
-int UWeaponBase::GetCurrentMagazine()
+AWeaponBase::AWeaponBase()
 {
-	return currentMagazine;
-}
-
-void UWeaponBase::FireRound()
-{
-	if (!roundInChamber)
+	V_ModelStaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemModel"));
+	if (V_ModelStaticMeshComponent->SetStaticMesh(V_Model))
 	{
-		return;
+		V_ModelStaticMeshComponent->ToggleVisibility();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Unable to assign associated W_Model to Static Mesh Component."));
+	}
+
+	bIsRoundInChamber = false;
+	NextPossibleAttackTime = 0.0f;
+	UpdateAmmoDisplay();
+}
+
+USoundBase* AWeaponBase::GetFireSound()
+{
+	return FireSound;
+}
+
+int AWeaponBase::GetCurrentMagazine()
+{
+	return CurrentMagazine;
+}
+
+bool AWeaponBase::Fire()
+{
+	if (!bIsRoundInChamber)
+	{
+		return false;
 	}
 	
-	if (currentMagazine > 0)
+	// If weapon is ready to fire
+	if (CurrentMagazine > 0)
 	{
-		currentMagazine -= 1;
+		CurrentMagazine -= 1;
 	}
 	else
 	{
-		roundInChamber = false;
+		bIsRoundInChamber = false;
 	}
+	UpdateAmmoDisplay();
+	return true;
 }
 
-void UWeaponBase::LoadMagazine()
+void AWeaponBase::LoadMagazine()
 {
-	if(roundInChamber)
+	if(bIsRoundInChamber)
 	{
-		currentMagazine = magazineCapacity;
+		CurrentMagazine = MagazineCapacity;
 	}
 	else
 	{
-		currentMagazine = magazineCapacity - 1;
-		roundInChamber = true;
+		CurrentMagazine = MagazineCapacity - 1;
+		bIsRoundInChamber = true;
 	}
+	UpdateAmmoDisplay();
 }
 
-bool UWeaponBase::isRoundInChamber()
+bool AWeaponBase::IsRoundInChamber()
 {
-	return roundInChamber;
+	return bIsRoundInChamber;
+}
+
+float AWeaponBase::GetNextAttackTime()
+{
+	return NextPossibleAttackTime;
+}
+
+void AWeaponBase::UpdateAttackTime(float Time)
+{
+	NextPossibleAttackTime = Time + FireRate;
+}
+
+void AWeaponBase::Interact(AActor* InteractingActor)
+{
+	Super::Interact();
+
+	OnPickup(InteractingActor);
+}
+
+void AWeaponBase::OnPickup(AActor* InteractingActor)
+{
+	bIsOwned = true;
+	W_ModelStaticMeshComponent->ToggleVisibility();
+	V_ModelStaticMeshComponent->ToggleVisibility();
+
+	AttachToActor(InteractingActor, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 }

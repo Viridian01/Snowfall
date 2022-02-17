@@ -4,53 +4,68 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "Kismet/GameplayStatics.h"
-#include "Net/UnrealNetwork.h"
 #include "WeaponBase.h"
-#include "SnowfallCharacterAnimInstance.h"
 #include "SnowfallCharacter.generated.h"
 
-UCLASS()
+UCLASS(config = Game)
 class SNOWFALL_API ASnowfallCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Instanced)
-	UWeaponBase* activeWeapon;
-	UStaticMeshComponent* worldWeapon;
+	AWeaponBase* ActiveWeapon;
+	UStaticMeshComponent* WorldWeapon;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FRotator headRot;
+	FRotator HeadRot;
 
 private:
-	const float SPRINT_MODIFIER = 1.5f;
-	bool sprinting;
-	
+	//class ASnowfallController* SnowfallController;
+	class UCameraComponent* CharacterCamera;
+
+	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"), Category = "Snowfall Player")
+	float InteractRange;
+
+	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"), Category = "Snowfall Player")
+	float BaseTurnRate;
+
+	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"), Category = "Snowfall Player")
+	float BaseLookUpRate;
+
+	//USnowfallMovementComponent* MovementPtr;
+
+	bool bIsSprinting;
+	bool bWantsToWalk;
+	UWorld* World;
+
 public:
+
 	// Sets default values for this character's properties
 	ASnowfallCharacter();
+
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+
+	UFUNCTION(BlueprintCallable, Category="Snowfall Character")
+	void UpdateHeadRot();
+
+	// Handles strafing movement, left and right
+	void Move(FVector Direction, float Value);
+	void Turn(float Rate);
+	void LookUp(float Rate);
+	void MoveForward(float Value);
+	void MoveRight(float Value);
+
+	void Fire1();
+	void Reload();
+
+	void Interact();
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-	UFUNCTION(BlueprintCallable, Category="Snowfall Character")
-	void UpdateHeadRot();
-
 private:
-
-	void MoveForward(float value);
-	void MoveRight(float value);
-	void Shoot();
-	void Reload();
-	void Crouch();
-	void Sprint();
+	
 };

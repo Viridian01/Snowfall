@@ -8,6 +8,8 @@
 #include "GameFramework/PlayerController.h"
 #include "SnowfallCharacterController.generated.h"
 
+class USnowfallMovementComponent;
+
 /**
  * 
  */
@@ -18,16 +20,28 @@ class SNOWFALL_API ASnowfallCharacterController : public APlayerController
 
 private:
 
-	ASnowfallCharacter* controlledCharacter;
-	UWeaponBase* activeWeapon;
-	
+	ASnowfallCharacter* ControlledCharacter;
+	AWeaponBase* ActiveWeapon;
+
+public:
+
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+
+	virtual void SetupInputComponent() override;
+
+	void Turn(float Rate);
+	void LookUp(float Rate);
+	void Jump();
+	void MoveForward(float Value);
+	void MoveRight(float Value);
+	void Fire1();
+	void Reload();
+	void Interact();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void BeginPlayingState() override;
 
-public:
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-	
 };

@@ -3,14 +3,23 @@
 
 #include "SnowfallCharacter.h"
 
+#include "DrawDebugHelpers.h"
+#include "Interactable.h"
+#include "SnowfallMovementComponent.h"
+#include "Camera/CameraComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
-ASnowfallCharacter::ASnowfallCharacter()
+ASnowfallCharacter::ASnowfallCharacter() // : ACharacter(ObjectInitializer.SetDefaultSubobjectClass<USnowfallMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	bReplicates = true;
-	sprinting = false;
+
+	InteractRange = 1000.0f;
+	BaseTurnRate = 45.0f;
+	BaseLookUpRate = 45.0f;
+
+	//MovementPtr = Cast<USnowfallMovementComponent>(ACharacter::GetMovementComponent());
 }
 
 // Called when the game starts or when spawned
@@ -18,87 +27,104 @@ void ASnowfallCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	worldWeapon = Cast<UStaticMeshComponent>(GetDefaultSubobjectByName(TEXT("Weapon_W")));
+	World = GetWorld();
+
+	CharacterCamera = Cast<UCameraComponent>(GetDefaultSubobjectByName("PlayerCamera"));
+	WorldWeapon = Cast<UStaticMeshComponent>(GetDefaultSubobjectByName(TEXT("Weapon_W")));
 }
 
 // Called every frame
 void ASnowfallCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
-// Called to bind functionality to input
-void ASnowfallCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void ASnowfallCharacter::Move(FVector Direction, float Value)
 {
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-	PlayerInputComponent->BindAxis("MoveForward", this, &ASnowfallCharacter::MoveForward);
-	PlayerInputComponent->BindAxis("MoveRight", this, &ASnowfallCharacter::MoveRight);
-	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
-	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
-	//PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ACharacter::Crouch);
-	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ASnowfallCharacter::Shoot);
-	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ASnowfallCharacter::Reload);
-}
-
-void ASnowfallCharacter::MoveForward(float value)
-{
-	if (!FMath::IsNearlyZero(value))
+	if (!FMath::IsNearlyZero(Value))
 	{
-		float modifier = sprinting ? SPRINT_MODIFIER : 1.0f;
-		AddMovementInput(GetActorForwardVector(), value * modifier);
+		AddMovementInput(Direction, Value);
 	}
 }
 
-void ASnowfallCharacter::MoveRight(float value)
+void ASnowfallCharacter::Turn(float Rate)
 {
-	if (!FMath::IsNearlyZero(value))
+	Rate = Rate * BaseTurnRate * World->GetDeltaSeconds();
+	AddControllerYawInput(Rate);
+}
+
+void ASnowfallCharacter::LookUp(float Rate)
+{
+	Rate = Rate * BaseLookUpRate * World->GetDeltaSeconds();
+	AddControllerPitchInput(Rate);
+}
+
+void ASnowfallCharacter::MoveForward(float Value)
+{
+	if (!FMath::IsNearlyZero(Value))
 	{
-		AddMovementInput(GetActorRightVector(), value);
+		AddMovementInput(GetActorForwardVector(), Value);
 	}
 }
 
-void ASnowfallCharacter::Shoot()
+void ASnowfallCharacter::MoveRight(float Value)
 {
-	if (activeWeapon->isRoundInChamber())
+	if (!FMath::IsNearlyZero(Value))
 	{
-		activeWeapon->FireRound();
-		if (!activeWeapon)
-		{
-			return;
-		}
+		AddMovementInput(GetActorRightVector(), Value);
+	}
+}
 
-		if (worldWeapon)
+void ASnowfallCharacter::Fire1()
+{
+	if (!ActiveWeapon || !WorldWeapon)
+	{
+		return;
+	}
+
+	float CurrTime = World->GetTimeSeconds();
+	float WeaponAttackTimer = ActiveWeapon->GetNextAttackTime();
+	if (WeaponAttackTimer <= CurrTime)
+	{
+		ActiveWeapon->UpdateAttackTime(CurrTime);
+		if (ActiveWeapon->Fire())
 		{
-			UGameplayStatics::PlaySoundAtLocation(worldWeapon, activeWeapon->GetFireSound(), worldWeapon->GetComponentTransform().GetLocation());
+			UGameplayStatics::PlaySoundAtLocation(WorldWeapon, ActiveWeapon->GetFireSound(), WorldWeapon->GetComponentTransform().GetLocation());
 		}
+	}
+	else
+	{
+		ActiveWeapon->DryFire();
 	}
 }
 
 void ASnowfallCharacter::Reload()
 {
-	if (!activeWeapon)
+	if (!ActiveWeapon)
 	{
 		return;
 	}
 
-	activeWeapon->LoadMagazine();
+	ActiveWeapon->LoadMagazine();
 }
 
-void ASnowfallCharacter::Crouch()
+void ASnowfallCharacter::Interact()
 {
-	
-}
-
-void ASnowfallCharacter::Sprint()
-{
-	sprinting = true;
+	// UE_LOG(LogTemp, Display, TEXT("Attempting interaction."));
+	FHitResult HitResult;
+	if(World->LineTraceSingleByChannel(HitResult, CharacterCamera->GetComponentLocation(), (CharacterCamera->GetComponentLocation() + (CharacterCamera->GetForwardVector() * InteractRange)), ECC_Visibility))
+	{
+		// DrawDebugLine(World, CharacterCamera->GetComponentLocation(), HitResult.ImpactPoint, FColor::Green, false, 5.f, ECC_WorldStatic, 1.f);
+		IInteractable* InteractActor = Cast<IInteractable>(HitResult.GetActor());
+		if (InteractActor)
+		{
+			// UE_LOG(LogTemp, Display, TEXT("Interactable Detected."));
+			InteractActor->Interact();
+		}
+	}
 }
 
 void ASnowfallCharacter::UpdateHeadRot()
 {
-	headRot.Roll = -GetControlRotation().Pitch;
+	HeadRot.Roll = -GetControlRotation().Pitch;
 }
-
