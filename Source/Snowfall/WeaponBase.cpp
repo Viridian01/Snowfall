@@ -16,7 +16,7 @@ void AWeaponBase::DryFire()
 
 AWeaponBase::AWeaponBase()
 {
-	V_ModelStaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemModel"));
+	V_ModelStaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WorldModel"));
 	if (V_ModelStaticMeshComponent->SetStaticMesh(V_Model))
 	{
 		V_ModelStaticMeshComponent->ToggleVisibility();
@@ -25,7 +25,6 @@ AWeaponBase::AWeaponBase()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Unable to assign associated W_Model to Static Mesh Component."));
 	}
-
 	bIsRoundInChamber = false;
 	NextPossibleAttackTime = 0.0f;
 	UpdateAmmoDisplay();
@@ -92,7 +91,7 @@ void AWeaponBase::UpdateAttackTime(float Time)
 
 void AWeaponBase::Interact(AActor* InteractingActor)
 {
-	Super::Interact();
+	Super::Interact(InteractingActor);
 
 	OnPickup(InteractingActor);
 }

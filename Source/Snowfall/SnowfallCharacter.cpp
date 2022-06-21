@@ -119,7 +119,7 @@ void ASnowfallCharacter::Interact()
 		if (InteractActor)
 		{
 			// UE_LOG(LogTemp, Display, TEXT("Interactable Detected."));
-			InteractActor->Interact();
+			InteractActor->Interact(this);
 		}
 	}
 }
