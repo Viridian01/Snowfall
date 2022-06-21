@@ -16,7 +16,7 @@ void AWeaponBase::DryFire()
 
 AWeaponBase::AWeaponBase()
 {
-	V_ModelStaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WorldModel"));
+	V_ModelStaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ViewModel"));
 	if (V_ModelStaticMeshComponent->SetStaticMesh(V_Model))
 	{
 		V_ModelStaticMeshComponent->ToggleVisibility();
